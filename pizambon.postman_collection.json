@@ -1,0 +1,989 @@
+{
+  "info": {
+    "name": "Prova Intermediária - Spring API v2",
+    "_postman_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "description": "Collection corrigida — rode via Collection Runner na ordem apresentada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",       "value": "http://localhost:8080", "type": "string" },
+    { "key": "clienteId",     "value": "", "type": "string" },
+    { "key": "equipamentoId", "value": "", "type": "string" },
+    { "key": "locacaoId",     "value": "", "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "Clientes",
+      "item": [
+
+        {
+          "name": "01 POST - Cadastrar Cliente (sucesso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Retorna cliente com ID', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string').and.not.empty;",
+                  "    pm.expect(json.nome).to.eql('João Silva');",
+                  "    pm.expect(json.email).to.eql('joao@email.com');",
+                  "    pm.expect(json.deleted).to.be.false;",
+                  "    pm.collectionVariables.set('clienteId', json.id);",
+                  "    console.log('clienteId salvo:', json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao@email.com\",\n  \"cpf\": \"123.456.789-00\",\n  \"telefone\": \"(11) 91234-5678\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          }
+        },
+
+        {
+          "name": "02 POST - Cadastrar Cliente (email duplicado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - email já existe', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Duplicado\",\n  \"email\": \"joao@email.com\",\n  \"cpf\": \"999.999.999-99\",\n  \"telefone\": \"(11) 99999-9999\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          }
+        },
+
+        {
+          "name": "03 POST - Cadastrar Cliente (campos obrigatórios ausentes)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - campos obrigatórios faltando', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefone\": \"(11) 91234-5678\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          }
+        },
+
+        {
+          "name": "04 GET - Listar Clientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          }
+        },
+
+        {
+          "name": "05 GET - Buscar Cliente por ID (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('clienteId');",
+                  "if (!id) { throw new Error('clienteId não definido — rode o request 01 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna cliente correto', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('clienteId'));",
+                  "    pm.expect(json.deleted).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        },
+
+        {
+          "name": "06 GET - Buscar Cliente por ID (não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - não encontrado', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clientes/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["clientes", "id-inexistente-000"] }
+          }
+        },
+
+        {
+          "name": "07 PUT - Atualizar Cliente (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('clienteId');",
+                  "if (!id) { throw new Error('clienteId não definido — rode o request 01 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Dados atualizados', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.nome).to.eql('João Silva Atualizado');",
+                  "    pm.expect(json.email).to.eql('joao.novo@email.com');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva Atualizado\",\n  \"email\": \"joao.novo@email.com\",\n  \"cpf\": \"123.456.789-00\",\n  \"telefone\": \"(11) 98765-4321\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        },
+
+        {
+          "name": "08 PUT - Atualizar Cliente (ID não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - ID inexistente', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Ninguém\",\n  \"email\": \"ninguem@email.com\",\n  \"cpf\": \"000.000.000-00\",\n  \"telefone\": \"(00) 00000-0000\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["clientes", "id-inexistente-000"] }
+          }
+        },
+
+        {
+          "name": "09 DELETE - Deletar Cliente (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('clienteId');",
+                  "if (!id) { throw new Error('clienteId não definido — rode o request 01 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        },
+
+        {
+          "name": "10 GET - Buscar Cliente deletado (deve retornar erro)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('clienteId');",
+                  "if (!id) { throw new Error('clienteId não definido — rode o request 01 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - cliente inativo após delete', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        },
+
+        {
+          "name": "11 DELETE - Deletar Cliente (ID não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - ID inexistente', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/clientes/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["clientes", "id-inexistente-000"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Equipamentos",
+      "item": [
+
+        {
+          "name": "12 POST - Cadastrar Equipamento (sucesso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Retorna equipamento com ID', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string').and.not.empty;",
+                  "    pm.expect(json.nome).to.eql('Furadeira');",
+                  "    pm.expect(json.deleted).to.be.false;",
+                  "    pm.collectionVariables.set('equipamentoId', json.id);",
+                  "    console.log('equipamentoId salvo:', json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Furadeira\",\n  \"categoria\": \"Ferramentas\",\n  \"valorDiaria\": 50.00,\n  \"codigoPatrimonio\": 1001,\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/equipamentos", "host": ["{{baseUrl}}"], "path": ["equipamentos"] }
+          }
+        },
+
+        {
+          "name": "13 POST - Cadastrar Equipamento (código patrimônio duplicado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - patrimônio já existe', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Furadeira Duplicada\",\n  \"categoria\": \"Ferramentas\",\n  \"valorDiaria\": 45.00,\n  \"codigoPatrimonio\": 1001,\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/equipamentos", "host": ["{{baseUrl}}"], "path": ["equipamentos"] }
+          }
+        },
+
+        {
+          "name": "14 POST - Cadastrar Equipamento (campos obrigatórios ausentes)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - campos obrigatórios faltando', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoria\": \"Ferramentas\",\n  \"valorDiaria\": 30.00,\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/equipamentos", "host": ["{{baseUrl}}"], "path": ["equipamentos"] }
+          }
+        },
+
+        {
+          "name": "15 GET - Listar Equipamentos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/equipamentos", "host": ["{{baseUrl}}"], "path": ["equipamentos"] }
+          }
+        },
+
+        {
+          "name": "16 GET - Buscar Equipamento por ID (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('equipamentoId');",
+                  "if (!id) { throw new Error('equipamentoId não definido — rode o request 12 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna equipamento correto', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('equipamentoId'));",
+                  "    pm.expect(json.deleted).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/equipamentos/{{equipamentoId}}", "host": ["{{baseUrl}}"], "path": ["equipamentos", "{{equipamentoId}}"] }
+          }
+        },
+
+        {
+          "name": "17 GET - Buscar Equipamento por ID (não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - não encontrado', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/equipamentos/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["equipamentos", "id-inexistente-000"] }
+          }
+        },
+
+        {
+          "name": "18 PUT - Atualizar Equipamento (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('equipamentoId');",
+                  "if (!id) { throw new Error('equipamentoId não definido — rode o request 12 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Dados atualizados', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.nome).to.eql('Furadeira Pro');",
+                  "    pm.expect(json.valorDiaria).to.eql(75.0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Furadeira Pro\",\n  \"categoria\": \"Ferramentas Profissionais\",\n  \"valorDiaria\": 75.00,\n  \"codigoPatrimonio\": 1001,\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/equipamentos/{{equipamentoId}}", "host": ["{{baseUrl}}"], "path": ["equipamentos", "{{equipamentoId}}"] }
+          }
+        },
+
+        {
+          "name": "19 PUT - Atualizar Equipamento (ID não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - ID inexistente', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Nada\",\n  \"categoria\": \"Nada\",\n  \"valorDiaria\": 0,\n  \"codigoPatrimonio\": 9999,\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/equipamentos/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["equipamentos", "id-inexistente-000"] }
+          }
+        },
+
+        {
+          "name": "20 DELETE - Deletar Equipamento (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('equipamentoId');",
+                  "if (!id) { throw new Error('equipamentoId não definido — rode o request 12 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/equipamentos/{{equipamentoId}}", "host": ["{{baseUrl}}"], "path": ["equipamentos", "{{equipamentoId}}"] }
+          }
+        },
+
+        {
+          "name": "21 GET - Buscar Equipamento deletado (deve retornar erro)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('equipamentoId');",
+                  "if (!id) { throw new Error('equipamentoId não definido — rode o request 12 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - equipamento inativo após delete', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/equipamentos/{{equipamentoId}}", "host": ["{{baseUrl}}"], "path": ["equipamentos", "{{equipamentoId}}"] }
+          }
+        },
+
+        {
+          "name": "22 DELETE - Deletar Equipamento (ID não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - ID inexistente', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/equipamentos/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["equipamentos", "id-inexistente-000"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Locações",
+      "item": [
+
+        {
+          "name": "23 [SETUP] Criar Cliente para Locação",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('clienteLocacaoId', pm.response.json().id);",
+                  "console.log('clienteLocacaoId salvo:', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Maria Locação\",\n  \"email\": \"maria.locacao@email.com\",\n  \"cpf\": \"987.654.321-00\",\n  \"telefone\": \"(11) 97777-8888\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          }
+        },
+
+        {
+          "name": "24 [SETUP] Criar Equipamento para Locação",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('equipamentoLocacaoId', pm.response.json().id);",
+                  "console.log('equipamentoLocacaoId salvo:', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Betoneira\",\n  \"categoria\": \"Construção\",\n  \"valorDiaria\": 120.00,\n  \"codigoPatrimonio\": 2002,\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/equipamentos", "host": ["{{baseUrl}}"], "path": ["equipamentos"] }
+          }
+        },
+
+        {
+          "name": "25 POST - Cadastrar Locação (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const cid = pm.collectionVariables.get('clienteLocacaoId');",
+                  "if (!cid) { throw new Error('clienteLocacaoId não definido — rode o request 23 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Retorna locação com equipamento atribuído', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string').and.not.empty;",
+                  "    pm.expect(json.equipamento).to.not.be.null;",
+                  "    pm.expect(json.deleted).to.be.false;",
+                  "    pm.collectionVariables.set('locacaoId', json.id);",
+                  "    console.log('locacaoId salvo:', json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"loc-001\",\n  \"dataInicio\": \"2025-03-01T08:00:00\",\n  \"dataFim\": \"2025-03-05T18:00:00\",\n  \"cliente\": {\n    \"id\": \"{{clienteLocacaoId}}\",\n    \"nome\": \"Maria Locação\",\n    \"email\": \"maria.locacao@email.com\",\n    \"cpf\": \"987.654.321-00\",\n    \"telefone\": \"(11) 97777-8888\"\n  },\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/locacoes", "host": ["{{baseUrl}}"], "path": ["locacoes"] }
+          }
+        },
+
+        {
+          "name": "26 POST - Cadastrar Locação (sem cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - cliente obrigatório', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"loc-002\",\n  \"dataInicio\": \"2025-03-10T08:00:00\",\n  \"dataFim\": \"2025-03-15T18:00:00\",\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/locacoes", "host": ["{{baseUrl}}"], "path": ["locacoes"] }
+          }
+        },
+
+        {
+          "name": "27 POST - Cadastrar Locação (ID duplicado)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const cid = pm.collectionVariables.get('clienteLocacaoId');",
+                  "if (!cid) { throw new Error('clienteLocacaoId não definido — rode o request 23 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - locação já existe', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"loc-001\",\n  \"dataInicio\": \"2025-04-01T08:00:00\",\n  \"dataFim\": \"2025-04-05T18:00:00\",\n  \"cliente\": {\n    \"id\": \"{{clienteLocacaoId}}\",\n    \"nome\": \"Maria Locação\",\n    \"email\": \"maria.locacao@email.com\",\n    \"cpf\": \"987.654.321-00\",\n    \"telefone\": \"(11) 97777-8888\"\n  },\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/locacoes", "host": ["{{baseUrl}}"], "path": ["locacoes"] }
+          }
+        },
+
+        {
+          "name": "28 GET - Listar Locações",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/locacoes", "host": ["{{baseUrl}}"], "path": ["locacoes"] }
+          }
+        },
+
+        {
+          "name": "29 GET - Buscar Locação por ID (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('locacaoId');",
+                  "if (!id) { throw new Error('locacaoId não definido — rode o request 25 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna locação correta', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.collectionVariables.get('locacaoId'));",
+                  "    pm.expect(json.deleted).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/locacoes/{{locacaoId}}", "host": ["{{baseUrl}}"], "path": ["locacoes", "{{locacaoId}}"] }
+          }
+        },
+
+        {
+          "name": "30 GET - Buscar Locação por ID (não encontrada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - não encontrada', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/locacoes/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["locacoes", "id-inexistente-000"] }
+          }
+        },
+
+        {
+          "name": "31 PUT - Atualizar Locação (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('locacaoId');",
+                  "if (!id) { throw new Error('locacaoId não definido — rode o request 25 primeiro'); }",
+                  "const cid = pm.collectionVariables.get('clienteLocacaoId');",
+                  "if (!cid) { throw new Error('clienteLocacaoId não definido — rode o request 23 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Equipamento ainda atribuído', () => {",
+                  "    pm.expect(pm.response.json().equipamento).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataInicio\": \"2025-03-10T08:00:00\",\n  \"dataFim\": \"2025-03-20T18:00:00\",\n  \"cliente\": {\n    \"id\": \"{{clienteLocacaoId}}\",\n    \"nome\": \"Maria Locação\",\n    \"email\": \"maria.locacao@email.com\",\n    \"cpf\": \"987.654.321-00\",\n    \"telefone\": \"(11) 97777-8888\"\n  },\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/locacoes/{{locacaoId}}", "host": ["{{baseUrl}}"], "path": ["locacoes", "{{locacaoId}}"] }
+          }
+        },
+
+        {
+          "name": "32 PUT - Atualizar Locação (ID não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - ID inexistente', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataInicio\": \"2025-05-01T08:00:00\",\n  \"dataFim\": \"2025-05-05T18:00:00\",\n  \"cliente\": { \"nome\": \"Ninguém\" },\n  \"deleted\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/locacoes/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["locacoes", "id-inexistente-000"] }
+          }
+        },
+
+        {
+          "name": "33 DELETE - Deletar Locação (sucesso)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('locacaoId');",
+                  "if (!id) { throw new Error('locacaoId não definido — rode o request 25 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/locacoes/{{locacaoId}}", "host": ["{{baseUrl}}"], "path": ["locacoes", "{{locacaoId}}"] }
+          }
+        },
+
+        {
+          "name": "34 GET - Buscar Locação deletada (deve retornar erro)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const id = pm.collectionVariables.get('locacaoId');",
+                  "if (!id) { throw new Error('locacaoId não definido — rode o request 25 primeiro'); }"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - locação inativa após delete', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/locacoes/{{locacaoId}}", "host": ["{{baseUrl}}"], "path": ["locacoes", "{{locacaoId}}"] }
+          }
+        },
+
+        {
+          "name": "35 DELETE - Deletar Locação (ID não encontrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 500 - ID inexistente', () => pm.response.to.have.status(500));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/locacoes/id-inexistente-000", "host": ["{{baseUrl}}"], "path": ["locacoes", "id-inexistente-000"] }
+          }
+        }
+
+      ]
+    }
+  ]
+}
